@@ -1,0 +1,14 @@
+# Set random number seeds to facilitate reproducibility studies
+seed(1234)
+# 5-fold cross validation
+train_control <- trainControl(method = "cv", number = 5)
+df_test$y=as.factor(df_test$y)
+# define the optimal number of hyperparameter k = 7 with the parameter ‘tuneGrid’.
+train_knn <- train(y ~ .,data = df_train,method = "knn",trControl = train_control,tuneGrid = different_k,preProcess = c("range"))
+train_knn
+
+
+train_knn_model <- predict(train_knn, df_train, type = "prob")
+test_knn_model <- predict(train_knn, df_test, type = "prob")
+pred_knn_test <- factor(ifelse(test_knn_model[, "1"], "0", "1"))
+confusionMatrix(pred_knn_test, df_test$y, positive = "1")
