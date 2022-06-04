@@ -1,0 +1,8 @@
+svmmodel=svm(as.factor(y)~age+marital+education+default+balance+housing+loan+contact+day+duration+campaign+pdays+previous+poutcome, data = training_set,kernel = "radial")
+#Calculation the accuracy of model
+pred = predict(svmmodel,test_set)
+TAX = table (Predicted = pred , actual = test_set$y)
+1-sum(diag(TAX)/sum(TAX))
+
+
+confusionMatrix(TAX)
