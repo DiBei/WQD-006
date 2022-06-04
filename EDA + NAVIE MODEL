@@ -1,0 +1,117 @@
+# Installing Packages
+install.packages("e1071")
+install.packages("caTools")
+install.packages("caret")
+install.packages("ggplot2")
+install.packages("psych")
+install.packages('Amelia')
+install.packages('mice')
+install.packages("GGally")
+install.packages("lares")
+
+# Loading package
+library(e1071)
+library(caTools)
+library(caret)
+library(ggplot2)
+library(psych) 
+library(Amelia)
+library(mice)
+library(GGally)
+library(lares)
+
+#Data importing
+#Reading data into R
+data<- read.csv("D:/Class/semester 2/WQD7006 MACHINE LEARNING FOR DATA SCIENCE/GA/train_set.csv")
+data <- data[,-1]
+
+#Setting outcome variables as categorical
+data$y <- factor(data$y, levels = c(0,1), labels = c("False", "True"))
+
+#Studying the structure of the data
+str(data)
+head(data)
+describe(data)
+
+#Data Cleaning
+#While analyzing the structure of the data set, we can see that the minimum values for pdays is -1. This is not ideal since no one can have a value of -1 for pdays. Therefore,  such value is treated as missing observation.
+#Convert '-1' values into NA
+data[, 14][data[, 14] == -1] <- NA
+
+#Exploratory Data Analysis
+
+#visualize the missing data
+missmap(data)
+
+methods(mice)
+
+#Use mice package to predict missing values
+mice_mod <- mice(data[, c("loan","pdays")],m=1,maxit=50,meth='pmm',seed=500)
+mice_complete <- complete(mice_mod)
+
+#Transfer the predicted missing values into the main data set
+data$pdays <- mice_complete$pdays
+
+missmap(data)
+
+#Data Visualization
+
+# display top 5 couples of variables (by correlation coefficient)
+# display only significant correlations (at 5% level)
+corr_cross(data, # name of dataset
+           max_pvalue = 0.05, # display only significant correlations (at 5% level)
+           top = 3 # display top 5 couples of variables (by correlation coefficient)
+)
+
+#Visual 1
+ggplot(data) + geom_bar(aes(x=job, fill=y, color=y)) + labs(title="job Distribution by y")
+
+#visual 2
+ggplot(data) + geom_bar(aes(x=education, fill=y, color=y)) + labs(title="education Distribution by y")
+
+#visual 3
+ggplot(data, aes(previous, colour = y)) + geom_freqpoly(binwidth = 100) + labs(title="previous Distribution by y")
+
+#visual 4
+ggplot(data) + geom_bar(aes(x=poutcome, fill=y, color=y)) + labs(title="poutcome Distribution by y")
+
+#visual 5
+ggplot(data) + geom_bar(aes(x=contact, fill=y, color=y)) + labs(title="contact Distribution by y")
+
+#visual 6
+ggplot(data) + geom_bar(aes(x=month, fill=y, color=y)) + labs(title="month Distribution by y")
+
+#visual 7
+ggplot(data) + geom_bar(aes(x=housing, fill=y, color=y)) + labs(title="housing Distribution by y")
+
+#visual 8
+ggplot(data, aes(age, colour = y)) + geom_freqpoly(binwidth = 1) + labs(title="age Distribution by y")
+
+#Data Modelling
+#split data into training and test data sets
+indxTrain <- createDataPartition(y = data$y,p = 0.8,list = FALSE)
+training <- data[indxTrain,]
+testing <- data[-indxTrain,] 
+
+#Check dimensions of the split 
+prop.table(table(data$y)) * 100
+prop.table(table(training$y)) * 100
+prop.table(table(testing$y)) * 100
+
+# Fitting Naive Bayes Model
+# to training dataset
+set.seed(120)  # Setting Seed
+classifier_cl <- naiveBayes(y ~ ., data = training,kernel="radial")
+classifier_cl
+
+# Predicting on test data'
+y_pred <- predict(classifier_cl, newdata = testing)
+y_pred
+
+# Confusion Matrix
+cm <- table(testing$y, y_pred)
+cm
+
+# Model Evaluation
+confusionMatrix(cm)
+
