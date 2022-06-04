@@ -1,0 +1,34 @@
+# Loading the package and dataset
+library(randomForest)
+library(caret)
+library(pROC)
+# Split training data and  test data
+trainList <- createDataPartition(mydata$y,p = 0.8,list = FALSE)
+trainset <- mydata[trainList,]
+testset <- mydata[-trainList,]
+#Find the optimal parameter mtry, that is, the optimal number of variables for the binary tree in the specified node
+n<-length(names(trainset))    
+rate=1     
+for(i in 1:(n-1)){
+  set.seed(1234)
+  rf_train1<-randomForest(as.factor(trainset$y)~.,data=trainset, mtry=i,ntree=1000)
+  rate[i]<-mean(rf_train1$err.rate)   
+  print(rf_train1) 
+}
+rate
+#Find the optimal parameter ntree, that is, specify the optimal number of decision trees contained in the random forest
+set.seed(100)
+rf_train2<-randomForest(as.factor(trainset$y)~.,data=trainset,mtry=9,ntree=100)
+plot(rf_train2)   
+# Building the model by traindata
+set.seed(6666)
+rf_train <- randomForest(as.factor(y) ~ .,data = trainset,mtry=9, ntree=500, importance=TRUE, na.action = na.pass)
+# Importance of each predictor
+print(importance(rf_train,type = 2)) 
+# Predicting on the test data
+set.seed(666)
+rf_test <- predict(rf_train, newdata = testset, type = "class")
+rf_cf <- caret::confusionMatrix(as.factor(rf_test), as.factor(testset$y))
+# ROC/AUC
+rf_test2 <- predict(rf_train,newdata = testset, type = "prob")
+roc_rf <- multiclass.roc(testset$y, rf_test2)
